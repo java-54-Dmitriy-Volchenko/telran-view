@@ -38,54 +38,91 @@ public interface InputOutput {
 	 * @return Integer number
 	 */
 	default Integer readInt(String prompt, String errorPrompt) {
-		// TODO
-		// Entered string must be a number otherwise, errorPrompt with cycle
-		return null;
-
+		return readObject(prompt, errorPrompt, str -> {
+			try {
+				return Integer.parseInt(str);
+			} catch (NumberFormatException e) {
+				throw new RuntimeException("Your input is not an integer");
+			}
+		});
 	}
 
 	default Long readLong(String prompt, String errorPrompt) {
-		// TODO
-		// Entered string must be a number otherwise, errorPrompt with cycle
-		return null;
-
+		return readObject(prompt, errorPrompt, str -> {
+			try {
+				return Long.parseLong(str);
+			} catch (NumberFormatException e) {
+				throw new RuntimeException("Your input is not a long");
+			}
+		});
 	}
 
 	default Double readDouble(String prompt, String errorPrompt) {
-		// TODO
-		// Entered string must be a number otherwise, errorPrompt with cycle
-		return null;
-
+		return readObject(prompt, errorPrompt, str -> {
+			try {
+				return Double.parseDouble(str);
+			} catch (NumberFormatException e) {
+				throw new RuntimeException("Your input is not a double");
+			}
+		});
 	}
 
 	default Double readNumberRange(String prompt, String errorPrompt, double min, double max) {
-		// TODO
-		// Entered string must be a number in range (min <= number < max) otherwise,
-		// errorPrompt with cycle
-		return null;
-	}
-	default String readStringPredicate(String prompt, String errorPrompt,
-			Predicate<String> predicate) {
-		//TODO
-		//Entered String must match a given predicate
-		return null;
-	}
-	default String readStringOptions(String prompt, String errorPrompt,
-			HashSet<String> options) {
-		//TODO
-		//Entered String must be one out of a given options
-		return null;
-	}
-	default LocalDate readIsoDate(String prompt, String errorPrompt) {
-		//TODO
-		//Entered String must be a LocalDate in format (yyyy-mm-dd)
-		return null;
-	}
-	default LocalDate readIsoDateRange(String prompt, String errorPrompt, LocalDate from,
-			LocalDate to) {
-		//Entered String must be a LocalDate in format (yyyy-mm-dd) in the (from, to)(after from and before to)
-		return null;
+		return readObject(prompt, errorPrompt, str -> {
+			double number;
+			try {
+				number = Double.parseDouble(str);
+			} catch (NumberFormatException e) {
+				throw new RuntimeException("Your input is not a number");
+			}
+			if (number < min || number >= max) {
+				throw new RuntimeException("Your number not in range");
+			}
+			return number;
+		});
 	}
 	
+	default String readStringPredicate(String prompt, String errorPrompt, Predicate<String> predicate) {
+		return readObject(prompt, errorPrompt, str -> {
+			if (!predicate.test(str)) {
+				throw new RuntimeException("No matching the predicate");
+			}
+			return str;
+		});
+	}
 
+	default String readStringOptions(String prompt, String errorPrompt, HashSet<String> options) {
+		return readObject(prompt, errorPrompt, str -> {
+			if (!options.contains(str)) {
+				throw new RuntimeException("String doesn't matching options");
+			}
+			return str;
+		});
+	}
+
+	default LocalDate readIsoDate(String prompt, String errorPrompt) {
+		return readObject(prompt, errorPrompt, str -> {
+			try {
+				return LocalDate.parse(str);
+			} catch (Exception e) {
+				throw new RuntimeException("Date format is not mathing ISO requirements");
+			}
+		});
+	}
+
+	default LocalDate readIsoDateRange(String prompt, String errorPrompt, LocalDate from, LocalDate to) {
+		return readObject(prompt, errorPrompt, str -> {
+			LocalDate date;
+			try {
+				date = LocalDate.parse(str);
+			} catch (Exception e) {
+				throw new RuntimeException("Date format is not mathing ISO requirements");
+			}
+			if (date.isBefore(from) || date.isAfter(to)) {
+				throw new RuntimeException("Date is not in range");
+			}
+			return date;
+		});
+	}
 }
+
