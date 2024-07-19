@@ -38,91 +38,71 @@ public interface InputOutput {
 	 * @return Integer number
 	 */
 	default Integer readInt(String prompt, String errorPrompt) {
-		return readObject(prompt, errorPrompt, str -> {
-			try {
-				return Integer.parseInt(str);
-			} catch (NumberFormatException e) {
-				throw new RuntimeException("Your input is not an integer");
-			}
-		});
+		// Entered string must be a number otherwise, errorPrompt with cycle
+		return readObject(prompt, errorPrompt, Integer::parseInt);
+
 	}
 
 	default Long readLong(String prompt, String errorPrompt) {
-		return readObject(prompt, errorPrompt, str -> {
-			try {
-				return Long.parseLong(str);
-			} catch (NumberFormatException e) {
-				throw new RuntimeException("Your input is not a long");
-			}
-		});
+		// Entered string must be a number otherwise, errorPrompt with cycle
+		return readObject(prompt, errorPrompt, Long::parseLong);
+
 	}
 
 	default Double readDouble(String prompt, String errorPrompt) {
-		return readObject(prompt, errorPrompt, str -> {
-			try {
-				return Double.parseDouble(str);
-			} catch (NumberFormatException e) {
-				throw new RuntimeException("Your input is not a double");
-			}
-		});
+		// Entered string must be a number otherwise, errorPrompt with cycle
+		return readObject(prompt, errorPrompt, Double::parseDouble);
+
 	}
 
 	default Double readNumberRange(String prompt, String errorPrompt, double min, double max) {
-		return readObject(prompt, errorPrompt, str -> {
-			double number;
-			try {
-				number = Double.parseDouble(str);
-			} catch (NumberFormatException e) {
-				throw new RuntimeException("Your input is not a number");
+		// Entered string must be a number in range (min <= number < max) otherwise,
+		// errorPrompt with cycle
+		return readObject(prompt, errorPrompt,
+				string -> {
+
+			double res = Double.parseDouble(string);
+			if (res < min) {
+				throw new IllegalArgumentException("must be not less than " + min);
 			}
-			if (number < min || number >= max) {
-				throw new RuntimeException("Your number not in range");
+			if (res > max) {
+				throw new IllegalArgumentException("must be not greater than " + max);
 			}
-			return number;
+			return res;
+
+		});
+	}
+	default String readStringPredicate(String prompt, String errorPrompt,
+			Predicate<String> predicate) {
+		//Entered String must match a given predicate
+		return readObject(prompt, errorPrompt, string -> {
+			if(!predicate.test(string)) {
+				throw new IllegalArgumentException("");
+			}
+			return string;
+		});
+	}
+	default String readStringOptions(String prompt, String errorPrompt,
+			HashSet<String> options) {
+		//Entered String must be one out of a given options
+		return readStringPredicate(prompt, errorPrompt, options::contains);
+	}
+	default LocalDate readIsoDate(String prompt, String errorPrompt) {
+		//Entered String must be a LocalDate in format (yyyy-mm-dd)
+		return readObject(prompt, errorPrompt, LocalDate::parse);
+	}
+	default LocalDate readIsoDateRange(String prompt, String errorPrompt, LocalDate from,
+			LocalDate to) {
+		//Entered String must be a LocalDate in format (yyyy-mm-dd) in the (from, to)(after from and before to)
+		return readObject(prompt, errorPrompt, string -> {
+			LocalDate res = LocalDate.parse(string);
+			if(!(res.isAfter(from)&& res.isBefore(to))) {
+				throw new IllegalArgumentException
+				(String.format("Date must be after %s before %s", from, to));
+			}
+			return res;
 		});
 	}
 	
-	default String readStringPredicate(String prompt, String errorPrompt, Predicate<String> predicate) {
-		return readObject(prompt, errorPrompt, str -> {
-			if (!predicate.test(str)) {
-				throw new RuntimeException("No matching the predicate");
-			}
-			return str;
-		});
-	}
 
-	default String readStringOptions(String prompt, String errorPrompt, HashSet<String> options) {
-		return readObject(prompt, errorPrompt, str -> {
-			if (!options.contains(str)) {
-				throw new RuntimeException("String doesn't matching options");
-			}
-			return str;
-		});
-	}
-
-	default LocalDate readIsoDate(String prompt, String errorPrompt) {
-		return readObject(prompt, errorPrompt, str -> {
-			try {
-				return LocalDate.parse(str);
-			} catch (Exception e) {
-				throw new RuntimeException("Date format is not mathing ISO requirements");
-			}
-		});
-	}
-
-	default LocalDate readIsoDateRange(String prompt, String errorPrompt, LocalDate from, LocalDate to) {
-		return readObject(prompt, errorPrompt, str -> {
-			LocalDate date;
-			try {
-				date = LocalDate.parse(str);
-			} catch (Exception e) {
-				throw new RuntimeException("Date format is not mathing ISO requirements");
-			}
-			if (date.isBefore(from) || date.isAfter(to)) {
-				throw new RuntimeException("Date is not in range");
-			}
-			return date;
-		});
-	}
 }
-
